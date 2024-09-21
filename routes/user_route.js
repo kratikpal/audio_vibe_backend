@@ -4,6 +4,8 @@ const { getUserById } = require("../controllers/user_controller");
 
 const router = express.Router();
 
-router.get("/", verifyJwtToken, getUserById);
+router.use(verifyJwtToken);
+
+router.get("/", getUserById);
 
 module.exports = router;

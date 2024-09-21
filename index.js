@@ -8,8 +8,9 @@ const { verifyJwtToken } = require("./helper/jwt_helper");
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const MONGO_URL = process.env.MONGO_URL;
 
-connectToDB("mongodb://localhost:27017/kp_music");
+connectToDB(MONGO_URL);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -25,6 +26,11 @@ app.use("/songHistory", songHistoryRoute);
 app.get("/protected", verifyJwtToken, (req, res) => {
   console.log(req.user);
   res.send("This is a protected route");
+});
+
+app.get("/date", (req, res) => {
+  const date = new Date().toISOString();
+  res.send(date);
 });
 
 app.listen(PORT, () => {
