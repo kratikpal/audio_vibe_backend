@@ -73,27 +73,33 @@ async function login(req, res) {
 
     await user.save();
 
-    return res
-      .status(200)
-      .json({
-        message: "Login successful",
-        token: token,
-        refreshToken: refreshToken,
-      });
+    return res.status(200).json({
+      message: "Login successful",
+      token: token,
+      refreshToken: refreshToken,
+    });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }
 }
 
-async function refreshToken(req, res, next) {
+async function refreshToken(req, res) {
+  const refreshToken = req.body.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "Refresh token is required" });
+  }
+
   try {
-    verifyRefreshToken(req, res, next);
-    if (!req.user) {
-      return res.status(401).json({ message: "Invalid token" });
+    const decoded = verifyRefreshToken(refreshToken);
+    if (!decoded) {
+      return res.status(401).json({ message: "Invalid refresh token" });
     }
-    console.log(req.user);
-    const token = await generateJwtToken(decoded.userId);
-    return res.status(200).json({ token: token });
+
+    const newToken = await generateJwtToken(decoded.userId);
+    return res
+      .status(200)
+      .json({ token: newToken, refreshToken: refreshToken });
   } catch (error) {
     return res.status(500).json({ message: error.message });
   }

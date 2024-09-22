@@ -7,7 +7,7 @@ const refreshKey = process.env.REFRESH_KRY;
 
 function generateJwtToken(userId) {
   return new Promise((resolve, reject) => {
-    jwt.sign({ userId }, secreatKey, { expiresIn: "1d" }, (err, token) => {
+    jwt.sign({ userId }, secreatKey, { expiresIn: "7d" }, (err, token) => {
       if (err) {
         reject(err);
       }
@@ -38,23 +38,29 @@ function verifyJwtToken(req, res, next) {
     token = token.slice(7, token.length);
   }
 
-  return new Promise((resolve, reject) => {
-    jwt.verify(token, secreatKey, (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ message: "Invalid token" });
-      }
-      req.user = decoded;
-      next();
-    });
+  jwt.verify(token, secreatKey, (err, decoded) => {
+    if (err) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    // Check if the token is expired
+    const currentTime = Math.floor(Date.now() / 1000); // Current time in seconds
+    if (decoded.exp && decoded.exp < currentTime) {
+      return res.status(401).json({ message: "Token has expired" });
+    }
+
+    req.user = decoded;
+    next();
   });
 }
 
 function verifyRefreshToken(token) {
-  if (!jwt.verify(token, refreshKey)) {
+  try {
+    const decoded = jwt.verify(token, refreshKey);
+    return decoded;
+  } catch (error) {
     throw new Error("Invalid refresh token");
   }
-
-  return jwt.decode(token);
 }
 
 module.exports = {
